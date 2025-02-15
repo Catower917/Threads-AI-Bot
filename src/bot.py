@@ -117,8 +117,11 @@ def search_web(topic: str) -> str:
     Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
     기존 함수를 그대로 사용합니다.
     """
-    serper = GoogleSerperAPIWrapper(parm={"tbs": "qdr:h",})  # SERPER_API_KEY는 환경 변수에서 자동 참조됨
-    result = serper.run(topic)
+    serper = GoogleSerperAPIWrapper(tbs="qdr:h", 
+                                type="search", 
+                                serper_api_key=SERPER_API_KEY,
+                                k=20)
+    result = serper.run(topic+" news")
     return result
 
 def search_image(query: str) -> str:
@@ -169,19 +172,20 @@ def main():
     for topic in topics:
         # 기사 검색: Serper를 사용하여 텍스트 기사 검색 (원본 기사 내용)
         news = search_web(topic)
-        print("검색된 기사 내용:")
+        print("검색된 기사 내용")
         print(news)
         # 이미지 검색: Serper 이미지 검색으로 첫 번째 이미지 URL 선택
         image_url = search_image("Ai")
-        print("선택된 이미지 URL:", image_url)
+        print("선택된 이미지 URL:")
+        print(image_url)
         
         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
         final_prompt = get_prompt(topic, news)
-        print("프롬프트:", final_prompt)
 
         # LangChain 체인을 통해 게시물 내용 생성
         post_content = generate_thread_post_chain(final_prompt)
-        print("게시물 내용:", post_content)
+        print("게시물 내용:")
+        print(post_content)
     
         if ACCESS_TOKEN:
             upload_result = upload_post(ACCESS_TOKEN, post_content, image_url=image_url)

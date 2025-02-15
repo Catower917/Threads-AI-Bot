@@ -1,37 +1,15 @@
-import requests
-import json
-
-url = "https://google.serper.dev/images"
-
-payload = json.dumps({
-  "q": "AI trend",
-  "gl": "kr",
-  "tbs": "qdr:w"
-})
-headers = {
-  'X-API-KEY': 'ce1727a0e4a3008e94a37fee9311d3307e081c18',
-  'Content-Type': 'application/json'
-}
-
-response = requests.request("POST", url, headers=headers, data=payload)
-
-print(response.text)
+# Google Serper Search API 임포트 (기사 검색용)
+from langchain_community.utilities import GoogleSerperAPIWrapper
+import os
+# .env 파일 로드
+from dotenv import load_dotenv
+load_dotenv()
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")  # Serper API 키
 
 
-import requests
-import json
-
-url = "https://google.serper.dev/search"
-
-payload = json.dumps({
-  "q": "AI trend",
-  "tbs": "qdr:w"
-})
-headers = {
-  'X-API-KEY': 'ce1727a0e4a3008e94a37fee9311d3307e081c18',
-  'Content-Type': 'application/json'
-}
-
-response = requests.request("POST", url, headers=headers, data=payload)
-
-print(response.text)
+serper = GoogleSerperAPIWrapper(tbs="qdr:h", 
+                                type="search", 
+                                serper_api_key=SERPER_API_KEY,
+                                k=20)
+result = serper.run("Ai trend")
+print(result)
