@@ -10,7 +10,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 import json
-from langchain.utilities import SerpAPIWrapper
+from langchain_community.utilities import GoogleSerperAPIWrapper
 import os
 # .env 파일 로드
 load_dotenv()
@@ -20,12 +20,31 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")  # TAVILY API 키
 USER_ID = os.getenv("USER_ID")  # Threads 사용자 ID
+SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+
 
 # OpenAI API 설정
 openai.api_key = OPENAI_API_KEY
 BASE_URL = "https://graph.threads.net/v1.0"
 
-def upload_post(access_token: str, text: str):
+# https://graph.threads.net/v1.0/<THREADS_USER_ID>/threads
+# ?media_type=IMAGE&image_url=https://www.example.com/images/bronz-fonz.jpg
+# &text=#BronzFonz
+# &access_token=<ACCESS_TOKEN>
+
+# 1. 항목 컨테이너 만들기기
+#  "https://graph.threads.net/v1.0/<THREADS_USER_ID>/threads
+# ?image_url=https%3A%2F%2Fsol...
+# &is_carousel_item=true
+# &access_token=<ACCESS_TOKEN>"
+
+# 2. 캐러셀 컨테이너 만들기
+# "https://graph.threads.net/v1.0/<THREADS_USER_ID>/threads
+# ?media_type=CAROUSEL
+# &children=<MEDIA_ID_1>,<MEDIA_ID_2>,<MEDIA_ID_3>
+# &access_token=<ACCESS_TOKEN>"
+
+def upload_post(access_token: str, text: str,  image_url: str):
     """
     Threads API를 사용하여 게시물을 업로드합니다.
     """
@@ -34,11 +53,21 @@ def upload_post(access_token: str, text: str):
 
     # Step 1: 텍스트 게시물 생성
     media_url = f"{BASE_URL}/{USER_ID}/threads"
-    payload = {
-        'media_type': 'TEXT',
-        'text': text,
-        'access_token': access_token
-    }
+
+    # image_url이 제공되면 IMAGE 타입으로, 아니면 TEXT 타입으로 처리
+    if image_url:
+        payload = {
+            'media_type': 'IMAGE',
+            'image_url': image_url,
+            'text': text,
+            'access_token': access_token
+        }
+    else:
+        payload = {
+            'media_type': 'TEXT',
+            'text': text,
+            'access_token': access_token
+        }
     response = requests.post(media_url, data=payload)
     container_id = response.json().get('id')
     if not container_id:
@@ -58,7 +87,7 @@ def upload_post(access_token: str, text: str):
         }
     else:
         return {
-            "error": "Failed to publish post",
+            "error": "[-] 게시물 업로드 실패",
             "details": publish_response.json()
         }
 
@@ -88,6 +117,35 @@ def generate_thread_post(prompt):
         print(f"알 수 없는 오류 발생: {e}")
         return {"error": f"알 수 없는 오류 발생: {e}"}
 
+def search_web(topic: str) -> str:
+    """
+    Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
+    """
+    serper = GoogleSerperAPIWrapper()
+    result = serper.run(topic)
+    return result
+
+def search_image(topic: str) -> str:
+    """
+    Google Serper Search API를 이미지 검색 모드(tbmi=isch)로 사용하여 주제와 관련된 첫 번째 이미지 URL을 가져옵니다.
+    """
+    serper = GoogleSerperAPIWrapper(params={
+        "engine": "google",
+        "q": topic,
+        "tbm": "isch",
+        "num": "1"
+    })
+    result = serper.run(topic)
+    try:
+        data = json.loads(result)
+        if "images_results" in data and len(data["images_results"]) > 0:
+            # thumbnail 또는 image 필드 중 선택 (여기서는 thumbnail 사용)
+            image_url = data["images_results"][0].get("thumbnail", None)
+            return image_url
+    except Exception as e:
+        print("Image search error:", e)
+    return None
+
 # def search_web(topic: str) -> str:
 #     """
 #     TAVILY Search API를 사용하여 주제에 관한 최신 정보를 검색합니다.
@@ -102,35 +160,14 @@ def generate_thread_post(prompt):
 #         result_texts.append(f"URL: {url}\nContent: {content}")
 #     return "\n\n".join(result_texts)
 
-def search_web(topic: str) -> str:
-    """
-    SerpAPI를 사용하여 주제에 관한 최신 정보를 검색합니다.
-    최대 3개의 검색 결과를 가져오며, 결과를 문자열로 반환합니다.
-    """
-    serpapi_key = os.getenv("SERPAPI_API_KEY")
-    if not serpapi_key:
-        return "SERPAPI API 키가 설정되어 있지 않습니다."
-    
-    # SerpAPIWrapper 생성 (추가 파라미터로 결과 수 지정)
-    serp = SerpAPIWrapper(
-        serpapi_api_key=serpapi_key,
-        params={
-            "engine": "google",
-            "q": topic,
-            "num": "3"
-        }
-    )
-    
-    # 검색 결과를 문자열로 가져오기 (원하는 경우 후처리 가능)
-    result = serp.run(topic)
-    return result
 
 
 def main():
-    topics = ["AI 최신 뉴스"]
+    topics = ["AI trend"]
     
     for topic in topics:
         news = search_web(topic)
+        image_url = search_image(topic)
         prompt = get_prompt(topic, news)
     
         if ACCESS_TOKEN:
@@ -139,7 +176,7 @@ def main():
             # 게시물 내용이 500자를 초과할 경우 재생성 (최대 3회)
             max_retry = 3
             retry_count = 0
-            upload_result = upload_post(ACCESS_TOKEN, text)
+            upload_result = upload_post(ACCESS_TOKEN, text, image_url=image_url)
             while (
                 "error" in upload_result and
                 "Param text must be at most 500 characters long." in upload_result.get("details", {}).get("error", {}).get("message", "")
@@ -149,7 +186,7 @@ def main():
                 print(f"[{retry_count}] 게시물 내용이 500자를 초과하여 재생성 시도합니다.")
                 short_prompt = f"{prompt}\n\n(주의: 게시물 내용은 500자 이하로 요약해서 작성해줘.)"
                 text = generate_thread_post(short_prompt)
-                upload_result = upload_post(ACCESS_TOKEN, text)
+                upload_result = upload_post(ACCESS_TOKEN, text, image_url=image_url)
             
             print(upload_result.get('message'))
         else:
