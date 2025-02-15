@@ -2,7 +2,7 @@ import os
 import threading
 import requests
 from flask import Flask, request, redirect, jsonify
-import bot
+from src import bot
 
 app = Flask(__name__)
 
