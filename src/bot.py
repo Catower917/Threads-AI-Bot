@@ -143,7 +143,7 @@ def main():
         raw_news = search_web(topic)
         # 뉴스 요약: 검색된 기사 전체를 요약합니다.
         summarized_news = summarize_text(raw_news) if raw_news else "No news found."
-        
+        print(summarized_news)
         # Serper 이미지 검색: 무작위 이미지 URL 선택
         image_url = search_image(topic)
         
