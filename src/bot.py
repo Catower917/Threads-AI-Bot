@@ -74,21 +74,6 @@ def upload_post(access_token: str, text: str, image_url: str = None):
             "details": publish_response.json()
         }
 
-def summarize_text(text: str) -> str:
-    """
-    주어진 뉴스 텍스트를 간결하게 요약합니다.
-    """
-    template = "Please summarize the following news in a concise manner (under 100 words):\n\n{text}\n\nSummary:"
-    prompt_template = ChatPromptTemplate.from_template(template)
-    llm = ChatOpenAI(model_name="gpt-4", temperature=0.3)
-    chain = LLMChain(llm=llm, prompt=prompt_template)
-    summary = chain.invoke({"text": text})
-    # 만약 summary가 dict라면, 'text' 키에서 결과를 추출하거나 원하는 키로 변경합니다.
-    if isinstance(summary, dict):
-        summary_text = summary.get("text", "")
-    else:
-        summary_text = summary
-    return summary_text.strip()
 
 def search_web(topic: str) -> str:
     """
@@ -129,36 +114,44 @@ def search_image(query: str) -> str:
         print("Serper 이미지 검색 실패:", response.text)
     return None
 
+
+
 def generate_thread_post_chain(final_prompt: str) -> str:
     """
-    LangChain 체인을 사용하여 기존 프롬프트(final_prompt)를 기반으로 게시물 콘텐츠를 생성합니다.
+    RunnableSequence 스타일 체인을 사용하여 기존 프롬프트(final_prompt)를 기반으로 게시물 콘텐츠를 생성합니다.
     """
-    prompt_template = ChatPromptTemplate.from_template("{prompt}")
-    llm = ChatOpenAI(model_name="gpt-4", temperature=1)
-    chain = LLMChain(llm=llm, prompt=prompt_template)
+    prompt_template = ChatPromptTemplate.from_template(final_prompt)
+    llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.8)
+    # 체인 구성: 프롬프트 템플릿과 LLM을 연결합니다.
+    chain = prompt_template | llm
     result = chain.invoke({"prompt": final_prompt})
-    print("생성된 게시물 내용:")
     print(result)
-    return result
+
+    # 결과가 dict라면 "text" 키를 추출, 그렇지 않으면 문자열 그대로 반환합니다.
+    if isinstance(result, dict):
+        return result.get("text", "").strip()
+    else:
+        return result.strip()
+
 
 def main():
     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
     for topic in topics:
-        # 기사 검색: Serper를 사용하여 텍스트 기사 검색
-        raw_news = search_web(topic)
-        # 뉴스 요약: 검색된 기사 전체를 요약합니다.
-        summarized_news = summarize_text(raw_news) if raw_news else "No news found."
-        print("요약된 뉴스:")
-        print(summarized_news)
-        # 이미지 검색: Serper 이미지 검색으로 가장 관련성 높은 이미지 URL 추출
-        image_url = search_image("AI")
-        print("이미지 URL:", image_url)
+        # 기사 검색: Serper를 사용하여 텍스트 기사 검색 (원본 기사 내용)
+        news = search_web(topic)
+        print("검색된 기사 내용:")
+        print(news)
+        # 이미지 검색: Serper 이미지 검색으로 첫 번째 이미지 URL 선택
+        image_url = search_image(topic)
+        print("선택된 이미지 URL:", image_url)
         
         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
-        final_prompt = get_prompt(topic, summarized_news)
-        
+        final_prompt = get_prompt(topic, news)
+        print("프롬프트:", final_prompt)
+
         # LangChain 체인을 통해 게시물 내용 생성
         post_content = generate_thread_post_chain(final_prompt)
+        print("게시물 내용:", post_content)
     
         if ACCESS_TOKEN:
             upload_result = upload_post(ACCESS_TOKEN, post_content, image_url=image_url)
