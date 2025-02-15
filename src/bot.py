@@ -4,7 +4,6 @@ import requests
 from dotenv import load_dotenv
 from src.prompt import get_prompt
 from langchain_community.tools.tavily_search import TavilySearchResults
-
 # LangChain 관련 임포트
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -12,6 +11,11 @@ from langchain.chains import LLMChain
 import json
 from langchain_community.utilities import GoogleSerperAPIWrapper
 import os
+# 무료 검색을 위한 DuckDuckGo 검색 함수 (텍스트)
+from langchain.utilities import DuckDuckGoSearchResults
+
+# 이미지 검색을 위해 duckduckgo_search 라이브러리 사용
+from duckduckgo_search import ddg_images
 # .env 파일 로드
 load_dotenv()
 
@@ -117,33 +121,52 @@ def generate_thread_post(prompt):
         print(f"알 수 없는 오류 발생: {e}")
         return {"error": f"알 수 없는 오류 발생: {e}"}
 
-def search_web(topic: str) -> str:
+# def search_web(topic: str) -> str:
+#     """
+#     Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
+#     """
+#     serper = GoogleSerperAPIWrapper()
+#     result = serper.run(topic)
+#     print(result)
+#     return result
+
+# def search_image(topic: str) -> str:
+#     """
+#     Google Serper Search API를 이미지 검색 모드(tbmi=isch)로 사용하여 주제와 관련된 첫 번째 이미지 URL을 가져옵니다.
+#     """
+#     serper = GoogleSerperAPIWrapper(params={
+#         "engine": "google",
+#         "q": topic,
+#         "tbs": "qdr:m",
+#         "num": "1"
+#     })
+#     result = serper.run(topic)
+#     try:
+#         data = json.loads(result)
+#         if "images_results" in data and len(data["images_results"]) > 0:
+#             # thumbnail 또는 image 필드 중 선택 (여기서는 thumbnail 사용)
+#             image_url = data["images_results"][0].get("thumbnail", None)
+#             return image_url
+#     except Exception as e:
+#         print("Image search error:", e)
+#     return None
+
+def search_text(query: str) -> str:
     """
-    Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
+    DuckDuckGoSearchResults를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
     """
-    serper = GoogleSerperAPIWrapper()
-    result = serper.run(topic)
+    search = DuckDuckGoSearchResults()
+    result = search.run(query)
     return result
 
-def search_image(topic: str) -> str:
+def search_image(query: str) -> str:
     """
-    Google Serper Search API를 이미지 검색 모드(tbmi=isch)로 사용하여 주제와 관련된 첫 번째 이미지 URL을 가져옵니다.
+    duckduckgo_search의 ddg_images 함수를 사용하여 주제와 관련된 첫 번째 이미지 URL을 가져옵니다.
     """
-    serper = GoogleSerperAPIWrapper(params={
-        "engine": "google",
-        "q": topic,
-        "tbm": "isch",
-        "num": "1"
-    })
-    result = serper.run(topic)
-    try:
-        data = json.loads(result)
-        if "images_results" in data and len(data["images_results"]) > 0:
-            # thumbnail 또는 image 필드 중 선택 (여기서는 thumbnail 사용)
-            image_url = data["images_results"][0].get("thumbnail", None)
-            return image_url
-    except Exception as e:
-        print("Image search error:", e)
+    results = ddg_images(query, max_results=1)
+    if results:
+        # 결과에서 "image" 또는 "thumbnail" 키 사용 (여기서는 "image" 사용)
+        return results[0].get("image")
     return None
 
 # def search_web(topic: str) -> str:

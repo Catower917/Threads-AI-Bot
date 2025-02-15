@@ -5,4 +5,4 @@ openai
 langchain_community
 pytest
 gunicorn
-google-search-results
+duckduckgo_search 
