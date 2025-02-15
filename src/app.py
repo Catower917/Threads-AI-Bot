@@ -9,7 +9,7 @@ app = Flask(__name__)
 # 환경 변수에서 클라이언트 정보 로드
 CLIENT_ID = os.getenv("APP_ID")
 CLIENT_SECRET = os.getenv("APP_SECRET")
-REDIRECT_URI = "https://Threads-AI-Bot.onrender.com/callback"
+REDIRECT_URI = "https://threads-ai-bot.onrender.com/callback"
 SCOPE = "threads_basic"
 AUTH_URL = "https://threads.net/oauth/authorize"
 TOKEN_URL = "https://graph.threads.net/oauth/access_token"
@@ -74,10 +74,27 @@ def callback():
     else:
         return jsonify({"error": "Failed to get access token", "details": response.json()}), 400
 
-# 외부 스케줄러 
+# 중복 실행 방지 위한 전역 변수 및 락 설정
+is_running = False
+lock = threading.Lock()
+
+def run_and_reset():
+    global is_running
+    try:
+        bot.main()  # 실제 게시물 업로드 작업 수행
+    finally:
+        with lock:
+            is_running = False
+
+# 외부 스케줄러용 엔드포인트 (중복 실행 방지 추가)
 @app.route('/runbot', methods=['GET'])
 def run_bot():
-    thread = threading.Thread(target=bot.main)
+    global is_running
+    with lock:
+        if is_running:
+            return jsonify({"message": "Bot is already running!"}), 429
+        is_running = True
+    thread = threading.Thread(target=run_and_reset)
     thread.start()
     return jsonify({"message": "Bot execution started!"})
 

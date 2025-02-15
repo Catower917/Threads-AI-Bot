@@ -60,7 +60,8 @@ def generate_thread_post(prompt):
     OpenAI API를 사용하여 게시물 콘텐츠를 생성합니다.
     """
     try:
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI()
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "너는 Meta Threads에서 활동하는 PurpleAILAB의 대표이자 AI Agent에 관심있는 SNS 콘텐츠 제작 전문가, 민P야."},
@@ -69,7 +70,7 @@ def generate_thread_post(prompt):
             temperature=0.7
         )
         text = response.choices[0].message.content.strip()
-        print("생성된 게시물 내용:")
+        print("게시물 내용:")
         print(text)
         return text
 
@@ -94,8 +95,10 @@ def search_web(topic: str) -> str:
         result_texts.append(f"URL: {url}\nContent: {content}")
     return "\n\n".join(result_texts)
 
+import json
+
 def main():
-    topics = ["AI Agent"]
+    topics = ["AI"]
     
     for topic in topics:
         news = search_web(topic)
@@ -119,7 +122,9 @@ def main():
                 text = generate_thread_post(short_prompt)
                 upload_result = upload_post(ACCESS_TOKEN, text)
             
-            print("게시물 업로드 결과:")
-            print(upload_result)
+            with open('upload_result.json','r', encoding='utf-8') as f:
+                upload_result = json.load(f)
+            
+            print(upload_result.get('message'))
         else:
             print("[-] 액세스 토큰 만료 혹은 오류")
