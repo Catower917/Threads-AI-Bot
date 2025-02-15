@@ -2,7 +2,7 @@ import os
 import threading
 import requests
 from flask import Flask, request, redirect, jsonify
-from src import bot  # src 디렉토리의 bot.py를 임포트
+import bot
 
 app = Flask(__name__)
 
