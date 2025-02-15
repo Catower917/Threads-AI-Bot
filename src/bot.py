@@ -99,7 +99,7 @@ def search_web(topic: str) -> str:
 def search_image(query: str) -> str:
     """
     Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중
-    가장 관련성이 높은 (첫 번째) imageUrl을 반환합니다.
+    무작위로 하나의 imageUrl을 반환합니다.
     """
     url = "https://google.serper.dev/images"
     payload = json.dumps({
@@ -117,7 +117,8 @@ def search_image(query: str) -> str:
             data = response.json()
             images = data.get("images", [])
             if images:
-                return images[0].get("imageUrl")
+                chosen = random.choice(images)  # 무작위 선택
+                return chosen.get("imageUrl")
         except Exception as e:
             print("이미지 검색 결과 처리 중 오류:", e)
             return None
@@ -147,7 +148,7 @@ def main():
         print("요약된 뉴스:")
         print(summarized_news)
         # 이미지 검색: Serper 이미지 검색으로 가장 관련성 높은 이미지 URL 추출
-        image_url = search_image(topic)
+        image_url = search_image("AI")
         print("이미지 URL:", image_url)
         
         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
