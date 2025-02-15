@@ -1,4 +1,4 @@
-name: Trigger /runbot Endpoint Every 2 Hours
+name: Trigger /runbot Endpoint Every 30m
 
 on:
   schedule:

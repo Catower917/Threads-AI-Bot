@@ -6,13 +6,16 @@ import random
 from dotenv import load_dotenv
 from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 
-# LangChain Community 관련 임포트
-from langchain_community.chat_models import ChatOpenAI
+# 최신 권장사항에 따라 ChatOpenAI를 langchain_openai에서 임포트
+from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 
 # Google Serper Search API 임포트 (기사 검색용)
 from langchain_community.utilities import GoogleSerperAPIWrapper
+
+# duckduckgo_search의 ddg_images를 하위 모듈에서 임포트
+from duckduckgo_search.duckduckgo_search import ddg_images
 
 # .env 파일 로드
 load_dotenv()
@@ -81,7 +84,7 @@ def summarize_text(text: str) -> str:
     prompt_template = ChatPromptTemplate.from_template(template)
     llm = ChatOpenAI(model_name="gpt-4", temperature=0.3)
     chain = LLMChain(llm=llm, prompt=prompt_template)
-    summary = chain.run({"text": text})
+    summary = chain.invoke({"text": text})
     return summary.strip()
 
 def search_web(topic: str) -> str:
@@ -114,7 +117,6 @@ def search_image(query: str) -> str:
             data = response.json()
             images = data.get("images", [])
             if images:
-                # 첫 번째 이미지를 반환 (기사와 가장 관련성이 높은 이미지)
                 return images[0].get("imageUrl")
         except Exception as e:
             print("이미지 검색 결과 처리 중 오류:", e)
@@ -123,7 +125,6 @@ def search_image(query: str) -> str:
         print("Serper 이미지 검색 실패:", response.text)
     return None
 
-
 def generate_thread_post_chain(final_prompt: str) -> str:
     """
     LangChain 체인을 사용하여 기존 프롬프트(final_prompt)를 기반으로 게시물 콘텐츠를 생성합니다.
@@ -131,7 +132,7 @@ def generate_thread_post_chain(final_prompt: str) -> str:
     prompt_template = ChatPromptTemplate.from_template("{prompt}")
     llm = ChatOpenAI(model_name="gpt-4", temperature=1)
     chain = LLMChain(llm=llm, prompt=prompt_template)
-    result = chain.run({"prompt": final_prompt})
+    result = chain.invoke({"prompt": final_prompt})
     print("생성된 게시물 내용:")
     print(result)
     return result
@@ -139,13 +140,15 @@ def generate_thread_post_chain(final_prompt: str) -> str:
 def main():
     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
     for topic in topics:
-        # Serper를 사용하여 텍스트 기사 검색
+        # 기사 검색: Serper를 사용하여 텍스트 기사 검색
         raw_news = search_web(topic)
         # 뉴스 요약: 검색된 기사 전체를 요약합니다.
         summarized_news = summarize_text(raw_news) if raw_news else "No news found."
+        print("요약된 뉴스:")
         print(summarized_news)
-        # Serper 이미지 검색: 무작위 이미지 URL 선택
+        # 이미지 검색: Serper 이미지 검색으로 가장 관련성 높은 이미지 URL 추출
         image_url = search_image(topic)
+        print("이미지 URL:", image_url)
         
         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
         final_prompt = get_prompt(topic, summarized_news)
