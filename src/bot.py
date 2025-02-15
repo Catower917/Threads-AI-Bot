@@ -95,7 +95,8 @@ def search_web(topic: str) -> str:
 
 def search_image(query: str) -> str:
     """
-    Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중 무작위로 하나의 imageUrl을 반환합니다.
+    Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중
+    가장 관련성이 높은 (첫 번째) imageUrl을 반환합니다.
     """
     url = "https://google.serper.dev/images"
     payload = json.dumps({
@@ -114,15 +115,15 @@ def search_image(query: str) -> str:
             data = response.json()
             images = data.get("images", [])
             if images:
-                chosen = random.choice(images)
-                # 필요에 따라 'imageUrl' 또는 'thumbnailUrl' 선택
-                return chosen.get("imageUrl")
+                # 첫 번째 이미지를 반환 (기사와 가장 관련성이 높은 이미지)
+                return images[0].get("imageUrl")
         except Exception as e:
             print("이미지 검색 결과 처리 중 오류:", e)
             return None
     else:
         print("Serper 이미지 검색 실패:", response.text)
     return None
+
 
 def generate_thread_post_chain(final_prompt: str) -> str:
     """
