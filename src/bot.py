@@ -122,9 +122,6 @@ def main():
                 text = generate_thread_post(short_prompt)
                 upload_result = upload_post(ACCESS_TOKEN, text)
             
-            with open('upload_result.json','r', encoding='utf-8') as f:
-                upload_result = json.load(f)
-            
             print(upload_result.get('message'))
         else:
             print("[-] 액세스 토큰 만료 혹은 오류")
