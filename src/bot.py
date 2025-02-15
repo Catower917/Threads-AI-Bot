@@ -14,8 +14,6 @@ from langchain.chains import LLMChain
 # Google Serper Search API 임포트 (기사 검색용)
 from langchain_community.utilities import GoogleSerperAPIWrapper
 
-# duckduckgo_search의 ddg_images를 하위 모듈에서 임포트
-from duckduckgo_search.duckduckgo_search import ddg_images
 
 # .env 파일 로드
 load_dotenv()
