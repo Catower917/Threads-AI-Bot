@@ -9,8 +9,10 @@ from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-from langchain.utilities import DuckDuckGoSearchResults
 from langchain.schema import RunnablePassthrough
+
+# DuckDuckGo 검색 관련 최신 임포트
+from langchain.tools import DuckDuckGoSearchRun
 
 # 무료 이미지 검색을 위해 duckduckgo_search 라이브러리 사용
 from duckduckgo_search import ddg_images
@@ -86,10 +88,10 @@ def summarize_text(text: str) -> str:
 
 def search_text(query: str) -> str:
     """
-    DuckDuckGoSearchResults를 사용하여 주제에 관한 최신 텍스트 정보를 검색하고,
+    DuckDuckGoSearchRun을 사용하여 주제에 관한 최신 텍스트 정보를 검색하고,
     검색 결과를 요약하여 반환합니다.
     """
-    search = DuckDuckGoSearchResults(backend="news")
+    search = DuckDuckGoSearchRun(backend="news")
     raw_result = search.run(query)
     if raw_result:
         summarized_result = summarize_text(raw_result)
