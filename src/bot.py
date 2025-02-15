@@ -9,7 +9,7 @@ from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-from langchain.schema import RunnablePassthrough
+# RunnablePassthrough 임포트 제거
 
 # DuckDuckGo 검색 관련 최신 임포트
 from langchain.tools import DuckDuckGoSearchRun
