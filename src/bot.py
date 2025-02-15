@@ -5,6 +5,13 @@ from dotenv import load_dotenv
 from src.prompt import get_prompt
 from langchain_community.tools.tavily_search import TavilySearchResults
 
+# LangChain 관련 임포트
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.chains import LLMChain
+import json
+from langchain.utilities import SerpAPIWrapper
+import os
 # .env 파일 로드
 load_dotenv()
 
@@ -81,24 +88,46 @@ def generate_thread_post(prompt):
         print(f"알 수 없는 오류 발생: {e}")
         return {"error": f"알 수 없는 오류 발생: {e}"}
 
+# def search_web(topic: str) -> str:
+#     """
+#     TAVILY Search API를 사용하여 주제에 관한 최신 정보를 검색합니다.
+#     """
+#     search_tool = TavilySearchResults(max_results=3)
+#     search_results = search_tool.invoke(topic)
+    
+#     result_texts = []
+#     for result in search_results:
+#         url = result.get("url", "")
+#         content = result.get("content", "")
+#         result_texts.append(f"URL: {url}\nContent: {content}")
+#     return "\n\n".join(result_texts)
+
 def search_web(topic: str) -> str:
     """
-    TAVILY Search API를 사용하여 주제에 관한 최신 정보를 검색합니다.
+    SerpAPI를 사용하여 주제에 관한 최신 정보를 검색합니다.
+    최대 3개의 검색 결과를 가져오며, 결과를 문자열로 반환합니다.
     """
-    search_tool = TavilySearchResults(max_results=3)
-    search_results = search_tool.invoke(topic)
+    serpapi_key = os.getenv("SERPAPI_API_KEY")
+    if not serpapi_key:
+        return "SERPAPI API 키가 설정되어 있지 않습니다."
     
-    result_texts = []
-    for result in search_results:
-        url = result.get("url", "")
-        content = result.get("content", "")
-        result_texts.append(f"URL: {url}\nContent: {content}")
-    return "\n\n".join(result_texts)
+    # SerpAPIWrapper 생성 (추가 파라미터로 결과 수 지정)
+    serp = SerpAPIWrapper(
+        serpapi_api_key=serpapi_key,
+        params={
+            "engine": "google",
+            "q": topic,
+            "num": "3"
+        }
+    )
+    
+    # 검색 결과를 문자열로 가져오기 (원하는 경우 후처리 가능)
+    result = serp.run(topic)
+    return result
 
-import json
 
 def main():
-    topics = ["AI"]
+    topics = ["AI 최신 뉴스"]
     
     for topic in topics:
         news = search_web(topic)
