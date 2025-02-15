@@ -5,11 +5,10 @@ import json
 from dotenv import load_dotenv
 from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 
-# LangChain 관련 임포트
-from langchain.chat_models import ChatOpenAI
+# LangChain Community 관련 임포트
+from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-from langchain.output_parsers import StrOutputParser
 from langchain.utilities import DuckDuckGoSearchResults
 from langchain.schema import RunnablePassthrough
 
@@ -110,7 +109,6 @@ def generate_thread_post_chain(final_prompt: str) -> str:
     """
     LangChain 체인을 사용하여 기존 프롬프트(final_prompt)를 기반으로 게시물 콘텐츠를 생성합니다.
     """
-    # 단순 프롬프트 템플릿: {prompt} 자리로 기존 final_prompt를 전달합니다.
     prompt_template = ChatPromptTemplate.from_template("{prompt}")
     llm = ChatOpenAI(model_name="gpt-4", temperature=1)
     chain = LLMChain(llm=llm, prompt=prompt_template)
@@ -122,7 +120,7 @@ def generate_thread_post_chain(final_prompt: str) -> str:
 def main():
     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
     for topic in topics:
-        # 웹 검색: 최신 뉴스 텍스트와 이미지 URL 추출
+        # 웹 검색: 최신 뉴스 텍스트와 이미지 URL 추출 및 요약
         news = search_text(topic)
         image_url = search_image(topic)
         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (뉴스 요약 포함)
