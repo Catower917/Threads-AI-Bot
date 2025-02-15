@@ -9,7 +9,7 @@ app = Flask(__name__)
 # 환경 변수에서 클라이언트 정보 로드
 CLIENT_ID = os.getenv("APP_ID")
 CLIENT_SECRET = os.getenv("APP_SECRET")
-REDIRECT_URI = "https://oaao.onrender.com/callback"
+REDIRECT_URI = "https://Threads-AI-Bot.onrender.com/callback"
 SCOPE = "threads_basic"
 AUTH_URL = "https://threads.net/oauth/authorize"
 TOKEN_URL = "https://graph.threads.net/oauth/access_token"
@@ -74,7 +74,7 @@ def callback():
     else:
         return jsonify({"error": "Failed to get access token", "details": response.json()}), 400
 
-# 외부 스케줄러 (예: cron-job.org)에서 호출할 엔드포인트
+# 외부 스케줄러 
 @app.route('/runbot', methods=['GET'])
 def run_bot():
     thread = threading.Thread(target=bot.main)

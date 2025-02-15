@@ -1,0 +1,13 @@
+name: Trigger /runbot Endpoint Every 2 Hours
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"  # 매 2시간마다 실행
+  workflow_dispatch:      # 수동 실행도 가능
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /runbot endpoint
+        run: curl -X GET https://your-render-app-url/runbot
