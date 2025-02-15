@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Render Server Root Endpoint
-        run: curl -I https://Threads-AI-Bot.onrender.com  # 실제 Render URL로 변경하세요.
+        run: curl -I https://threads-ai-bot.onrender.com  # 실제 Render URL로 변경하세요.

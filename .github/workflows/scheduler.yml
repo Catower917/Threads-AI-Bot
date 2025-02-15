@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call /runbot endpoint
-        run: curl -X GET https://Threads-AI-Bot.onrender.com/runbot
+        run: curl -X GET https://threads-ai-bot.onrender.com/runbot
