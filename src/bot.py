@@ -20,7 +20,7 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")  # TAVILY API 키
 USER_ID = os.getenv("USER_ID")  # Threads 사용자 ID
-SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 
 
 # OpenAI API 설정
