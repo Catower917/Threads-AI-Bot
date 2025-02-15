@@ -2,6 +2,7 @@ import os
 import openai
 import requests
 import json
+import random
 from dotenv import load_dotenv
 from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 
@@ -9,13 +10,9 @@ from src.prompt import get_prompt  # 기존 프롬프트 템플릿 사용
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-# RunnablePassthrough 임포트 제거
 
-# DuckDuckGo 검색 관련 최신 임포트
-from langchain.tools import DuckDuckGoSearchRun
-
-# 무료 이미지 검색을 위해 duckduckgo_search 라이브러리 사용
-from duckduckgo_search import ddg_images
+# Google Serper Search API 임포트 (기사 검색용)
+from langchain_community.utilities import GoogleSerperAPIWrapper
 
 # .env 파일 로드
 load_dotenv()
@@ -24,6 +21,7 @@ load_dotenv()
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 USER_ID = os.getenv("USER_ID")  # Threads 사용자 ID
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")  # Serper API 키
 
 # OpenAI API 설정
 openai.api_key = OPENAI_API_KEY
@@ -86,25 +84,44 @@ def summarize_text(text: str) -> str:
     summary = chain.run({"text": text})
     return summary.strip()
 
-def search_text(query: str) -> str:
+def search_web(topic: str) -> str:
     """
-    DuckDuckGoSearchRun을 사용하여 주제에 관한 최신 텍스트 정보를 검색하고,
-    검색 결과를 요약하여 반환합니다.
+    Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
+    기존 함수를 그대로 사용합니다.
     """
-    search = DuckDuckGoSearchRun(backend="news")
-    raw_result = search.run(query)
-    if raw_result:
-        summarized_result = summarize_text(raw_result)
-        return summarized_result
-    return "No news found."
+    serper = GoogleSerperAPIWrapper()  # SERPER_API_KEY는 환경 변수에서 자동 참조됨
+    result = serper.run(topic)
+    return result
 
 def search_image(query: str) -> str:
     """
-    duckduckgo_search의 ddg_images 함수를 사용하여 주제와 관련된 첫 번째 이미지 URL을 가져옵니다.
+    Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중 무작위로 하나의 imageUrl을 반환합니다.
     """
-    results = ddg_images(query, max_results=1)
-    if results:
-        return results[0].get("image")
+    url = "https://google.serper.dev/images"
+    payload = json.dumps({
+         "q": query,
+         "gl": "kr",
+         "tbs": "qdr:w",
+         "num": 10
+    })
+    headers = {
+         "X-API-KEY": SERPER_API_KEY,
+         "Content-Type": "application/json"
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            images = data.get("images", [])
+            if images:
+                chosen = random.choice(images)
+                # 필요에 따라 'imageUrl' 또는 'thumbnailUrl' 선택
+                return chosen.get("imageUrl")
+        except Exception as e:
+            print("이미지 검색 결과 처리 중 오류:", e)
+            return None
+    else:
+        print("Serper 이미지 검색 실패:", response.text)
     return None
 
 def generate_thread_post_chain(final_prompt: str) -> str:
@@ -122,11 +139,16 @@ def generate_thread_post_chain(final_prompt: str) -> str:
 def main():
     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
     for topic in topics:
-        # 웹 검색: 최신 뉴스 텍스트와 이미지 URL 추출 및 요약
-        news = search_text(topic)
+        # Serper를 사용하여 텍스트 기사 검색
+        raw_news = search_web(topic)
+        # 뉴스 요약: 검색된 기사 전체를 요약합니다.
+        summarized_news = summarize_text(raw_news) if raw_news else "No news found."
+        
+        # Serper 이미지 검색: 무작위 이미지 URL 선택
         image_url = search_image(topic)
-        # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (뉴스 요약 포함)
-        final_prompt = get_prompt(topic, news)
+        
+        # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
+        final_prompt = get_prompt(topic, summarized_news)
         
         # LangChain 체인을 통해 게시물 내용 생성
         post_content = generate_thread_post_chain(final_prompt)
