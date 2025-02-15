@@ -67,7 +67,7 @@ def generate_thread_post(prompt):
                 {"role": "system", "content": "너는 Meta Threads에서 활동하는 PurpleAILAB의 대표이자 AI Agent에 관심있는 SNS 콘텐츠 제작 전문가, 민P야."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
+            temperature=1
         )
         text = response.choices[0].message.content.strip()
         print("게시물 내용:")
