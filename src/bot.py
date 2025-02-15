@@ -101,7 +101,6 @@ def search_image(query: str) -> str:
     url = "https://google.serper.dev/images"
     payload = json.dumps({
          "q": query,
-         "gl": "kr",
          "tbs": "qdr:w",
          "num": 10
     })
