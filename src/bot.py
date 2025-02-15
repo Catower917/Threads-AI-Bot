@@ -74,61 +74,16 @@ def upload_post(access_token: str, text: str, image_url: str = None):
             "details": publish_response.json()
         }
 
-def search_news(topic: str) -> tuple:
-    """
-    Serper 뉴스 검색 API를 사용하여 주제에 관한 최신 뉴스 10개를 검색하고,
-    그 중 무작위로 하나의 뉴스 항목을 선택하여 (title, snippet, imageUrl) 튜플을 반환합니다.
-    """
-    url = "https://google.serper.dev/news"
-    payload = json.dumps({
-         "q": topic,
-         "tbs": "qdr:w",  # 지난 한 주 동안의 뉴스
-         "num": 10
-    })
-    headers = {
-         "X-API-KEY": SERPER_API_KEY,
-         "Content-Type": "application/json"
-    }
-    response = requests.request("POST", url, headers=headers, data=payload)
-    if response.status_code == 200:
-        try:
-            data = response.json()
-            news_items = data.get("news", [])
-            if news_items:
-                chosen = random.choice(news_items)
-                title = chosen.get("title", "No Title")
-                snippet = chosen.get("snippet", "No snippet")
-                image_url = chosen.get("imageUrl", None)
-                return title, snippet, image_url
-            else:
-                print("No news items found.")
-                return None
-        except Exception as e:
-            print("Error processing news search results:", e)
-            return None
-    else:
-        print("Serper news search failed:", response.text)
-        return None
-
-
-# def search_web(topic: str) -> str:
+# 뉴스 검색 기반반
+# def search_news(topic: str) -> tuple:
 #     """
-#     Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
-#     기존 함수를 그대로 사용합니다.
+#     Serper 뉴스 검색 API를 사용하여 주제에 관한 최신 뉴스 10개를 검색하고,
+#     그 중 무작위로 하나의 뉴스 항목을 선택하여 (title, snippet, imageUrl) 튜플을 반환합니다.
 #     """
-#     serper = GoogleSerperAPIWrapper(parm={"tbs": "qdr:h",})  # SERPER_API_KEY는 환경 변수에서 자동 참조됨
-#     result = serper.run(topic)
-#     return result
-
-# def search_image(query: str) -> str:
-#     """
-#     Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중
-#     무작위로 하나의 imageUrl을 반환합니다.
-#     """
-#     url = "https://google.serper.dev/images"
+#     url = "https://google.serper.dev/news"
 #     payload = json.dumps({
-#          "q": query,
-#          "tbs": "qdr:h",
+#          "q": topic,
+#          "tbs": "qdr:w",  # 지난 한 주 동안의 뉴스
 #          "num": 10
 #     })
 #     headers = {
@@ -139,16 +94,62 @@ def search_news(topic: str) -> tuple:
 #     if response.status_code == 200:
 #         try:
 #             data = response.json()
-#             images = data.get("images", [])
-#             if images:
-#                 chosen = random.choice(images)  # 무작위 선택
-#                 return chosen.get("imageUrl")
+#             news_items = data.get("news", [])
+#             if news_items:
+#                 chosen = random.choice(news_items)
+#                 title = chosen.get("title", "No Title")
+#                 snippet = chosen.get("snippet", "No snippet")
+#                 image_url = chosen.get("imageUrl", None)
+#                 return title, snippet, image_url
+#             else:
+#                 print("No news items found.")
+#                 return None
 #         except Exception as e:
-#             print("이미지 검색 결과 처리 중 오류:", e)
+#             print("Error processing news search results:", e)
 #             return None
 #     else:
-#         print("Serper 이미지 검색 실패:", response.text)
-#     return None
+#         print("Serper news search failed:", response.text)
+#         return None
+
+
+def search_web(topic: str) -> str:
+    """
+    Google Serper Search API를 사용하여 주제에 관한 최신 텍스트 정보를 검색합니다.
+    기존 함수를 그대로 사용합니다.
+    """
+    serper = GoogleSerperAPIWrapper(parm={"tbs": "qdr:h",})  # SERPER_API_KEY는 환경 변수에서 자동 참조됨
+    result = serper.run(topic)
+    return result
+
+def search_image(query: str) -> str:
+    """
+    Serper 이미지 검색 API를 사용하여 주제와 관련된 이미지 중
+    무작위로 하나의 imageUrl을 반환합니다.
+    """
+    url = "https://google.serper.dev/images"
+    payload = json.dumps({
+         "q": query,
+         "tbs": "qdr:h",
+         "num": 10
+    })
+    headers = {
+         "X-API-KEY": SERPER_API_KEY,
+         "Content-Type": "application/json"
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            images = data.get("images", [])
+            if images:
+                chosen = random.choice(images)  # 무작위 선택
+                return chosen.get("imageUrl")
+        except Exception as e:
+            print("이미지 검색 결과 처리 중 오류:", e)
+            return None
+    else:
+        print("Serper 이미지 검색 실패:", response.text)
+    return None
 
 
 
@@ -163,34 +164,24 @@ def generate_thread_post_chain(final_prompt: str) -> str:
     result = chain.invoke({"prompt": final_prompt})
     return result.content.strip()
 
-
-
 def main():
     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
     for topic in topics:
-        # 뉴스 검색: Serper 뉴스 검색 API를 사용하여 최신 뉴스 항목 중 무작위로 하나 선택
-        news_result = search_news(topic)
-        if news_result:
-            title, snippet, image_url = news_result
-            # 뉴스 텍스트를 간략하게 구성 (타이틀과 스니펫)
-            news = f"Title: {title}\nSnippet: {snippet}\n"
-        else:
-            news = "No news found."
-            image_url = None
-        
-        print("선택된 뉴스 요약:")
+        # 기사 검색: Serper를 사용하여 텍스트 기사 검색 (원본 기사 내용)
+        news = search_web(topic)
+        print("검색된 기사 내용:")
         print(news)
+        # 이미지 검색: Serper 이미지 검색으로 첫 번째 이미지 URL 선택
+        image_url = search_image("Ai")
         print("선택된 이미지 URL:", image_url)
         
-        # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (뉴스 요약 포함)
+        # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
         final_prompt = get_prompt(topic, news)
-        print("생성 프롬프트:")
-        print(final_prompt)
-        
+        print("프롬프트:", final_prompt)
+
         # LangChain 체인을 통해 게시물 내용 생성
         post_content = generate_thread_post_chain(final_prompt)
-        print("생성된 게시물 내용:")
-        print(post_content)
+        print("게시물 내용:", post_content)
     
         if ACCESS_TOKEN:
             upload_result = upload_post(ACCESS_TOKEN, post_content, image_url=image_url)
@@ -215,24 +206,35 @@ def main():
 if __name__ == "__main__":
     main()
 
+
+
+
 # def main():
 #     topics = ["AI Trend"]  # 영어 주제로 설정하여 글로벌 뉴스를 수집
 #     for topic in topics:
-#         # 기사 검색: Serper를 사용하여 텍스트 기사 검색 (원본 기사 내용)
-#         news = search_web(topic)
-#         print("검색된 기사 내용:")
+#         # 뉴스 검색: Serper 뉴스 검색 API를 사용하여 최신 뉴스 항목 중 무작위로 하나 선택
+#         news_result = search_news(topic)
+#         if news_result:
+#             title, snippet, image_url = news_result
+#             # 뉴스 텍스트를 간략하게 구성 (타이틀과 스니펫)
+#             news = f"Title: {title}\nSnippet: {snippet}\n"
+#         else:
+#             news = "No news found."
+#             image_url = None
+        
+#         print("선택된 뉴스 요약:")
 #         print(news)
-#         # 이미지 검색: Serper 이미지 검색으로 첫 번째 이미지 URL 선택
-#         image_url = search_image(topic)
 #         print("선택된 이미지 URL:", image_url)
         
-#         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (요약된 뉴스 포함)
+#         # 기존 prompt.py의 get_prompt를 사용하여 최종 프롬프트 생성 (뉴스 요약 포함)
 #         final_prompt = get_prompt(topic, news)
-#         print("프롬프트:", final_prompt)
-
+#         print("생성 프롬프트:")
+#         print(final_prompt)
+        
 #         # LangChain 체인을 통해 게시물 내용 생성
 #         post_content = generate_thread_post_chain(final_prompt)
-#         print("게시물 내용:", post_content)
+#         print("생성된 게시물 내용:")
+#         print(post_content)
     
 #         if ACCESS_TOKEN:
 #             upload_result = upload_post(ACCESS_TOKEN, post_content, image_url=image_url)
@@ -256,3 +258,4 @@ if __name__ == "__main__":
 
 # if __name__ == "__main__":
 #     main()
+
