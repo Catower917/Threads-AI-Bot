@@ -83,7 +83,12 @@ def summarize_text(text: str) -> str:
     llm = ChatOpenAI(model_name="gpt-4", temperature=0.3)
     chain = LLMChain(llm=llm, prompt=prompt_template)
     summary = chain.invoke({"text": text})
-    return summary.strip()
+    # 만약 summary가 dict라면, 'text' 키에서 결과를 추출하거나 원하는 키로 변경합니다.
+    if isinstance(summary, dict):
+        summary_text = summary.get("text", "")
+    else:
+        summary_text = summary
+    return summary_text.strip()
 
 def search_web(topic: str) -> str:
     """
