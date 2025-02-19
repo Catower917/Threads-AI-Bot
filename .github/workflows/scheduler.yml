@@ -1,13 +1,13 @@
-name: Trigger /runbot Endpoint Every 1H
+#name: Trigger /runbot Endpoint Every 1H
 
-on:
-  schedule:
-    - cron: "0 11,23 * * *"  # 매일 11:00, 23:00 (UTC 기준)
-  workflow_dispatch:      # 수동 실행도 가능
+#on:
+#  schedule:
+#   - cron: "0 11,23 * * *"  # 매일 11:00, 23:00 (UTC 기준)
+#  workflow_dispatch:      # 수동 실행도 가능
 
-jobs:
-  trigger:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call /runbot endpoint
-        run: curl -X GET https://threads-ai-bot.onrender.com/runbot
+#jobs:
+#  trigger:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Call /runbot endpoint
+#        run: curl -X GET https://threads-ai-bot.onrender.com/runbot
